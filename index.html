@@ -476,7 +476,11 @@ var CONFIG = {
   units: "celsius",          // "celsius" or "fahrenheit"
   aqi: "us",                 // "us" or "european"
   homeAdvice: true,          // show indoor climate line / 是否显示居家建议
-  refreshMinutes: 15         // weather refresh interval / 天气刷新间隔（分钟）
+  refreshMinutes: 15,        // weather refresh interval / 天气刷新间隔（分钟）
+  counter: true,             // visit counter / 访问计数；设为 false 可关闭
+  // Visitor Badge page_id (laobi.icu). After a fork, change this to your own id.
+  // Fork 后请改成自己的 id，以便单独计数。
+  counterId: "ywlbest-creator.github.io.weather-clock-dashboard"
 };
 
   var ICONS = {
@@ -686,6 +690,10 @@ var CONFIG = {
     if (q.home != null && q.home !== "") {
       hv = String(q.home).toLowerCase();
       c.homeAdvice = !(hv === "0" || hv === "false" || hv === "off" || hv === "no");
+    }
+    if (q.counter != null && q.counter !== "") {
+      hv = String(q.counter).toLowerCase();
+      c.counter = !(hv === "0" || hv === "false" || hv === "off" || hv === "no");
     }
     if (q.refresh) {
       r = parseFloat(q.refresh);
@@ -1495,6 +1503,35 @@ var CONFIG = {
       }
     } catch (e) {}
   }
+  function setupCounter() {
+    var id, img, src;
+    try {
+      if (!cfg || cfg.counter === false || cfg.counter === 0) return;
+      id = cfg.counterId || "";
+      if (!id) return;
+      src = "https://visitor-badge.laobi.icu/badge?page_id=" + encodeURIComponent(id) + "&t=" + (new Date()).getTime();
+      img = document.createElement("img");
+      img.alt = "";
+      img.width = 1;
+      img.height = 1;
+      img.style.position = "absolute";
+      img.style.left = "0";
+      img.style.bottom = "0";
+      img.style.width = "1px";
+      img.style.height = "1px";
+      img.style.opacity = "0";
+      img.style.pointerEvents = "none";
+      img.style.border = "0";
+      img.onload = function () {
+        try { if (img.parentNode) img.parentNode.removeChild(img); } catch (e1) {}
+      };
+      img.onerror = function () {
+        try { if (img.parentNode) img.parentNode.removeChild(img); } catch (e2) {}
+      };
+      document.body.appendChild(img);
+      img.src = src;
+    } catch (e) {}
+  }
   function setupKeepAwake() {
     var btn = document.getElementById("fs-btn");
     if (btn) {
@@ -1525,6 +1562,7 @@ var CONFIG = {
     tick();
     setInterval(tick, 1000);
     setupKeepAwake();
+    setupCounter();
     resolveLocation(function () {
       fakeBase = parseDemoNow();
       pageStart = (new Date()).getTime();

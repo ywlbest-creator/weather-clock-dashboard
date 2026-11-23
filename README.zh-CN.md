@@ -2,6 +2,8 @@
 
 [English](README.md)
 
+[![访问](https://visitor-badge.laobi.icu/badge?page_id=ywlbest-creator.github.io.weather-clock-dashboard&left_text=%E8%AE%BF%E9%97%AE&query_only=true)](https://ywlbest-creator.github.io/weather-clock-dashboard/)
+
 把任意一台能上网的旧设备——手机、平板、电脑或电视浏览器——变成一块全屏天气时钟：时间、天气、穿衣建议和居家提示。无需安装 App，用浏览器打开即可。单文件、无外部依赖。
 
 ![中文界面](preview.png)
@@ -52,6 +54,19 @@
 
 ---
 
+## 如何查看访问量
+
+本说明顶部的徽章显示[在线页面](https://ywlbest-creator.github.io/weather-clock-dashboard/)被打开的次数，与页面使用的是同一套计数。
+
+计数服务是 [Visitor Badge](https://visitor-badge.laobi.icu/)（`visitor-badge.laobi.icu`），免注册的公共计数，只保存一个页面 id 和数字，不收集个人信息。在线页用一次隐藏请求记数；若该请求失败，时钟和天气页面仍会照常工作。说明里的徽章带有 `query_only=true`，只看说明、不加次数。
+
+Fork 之后可以这样处理：
+
+- 在 `index.html` 里把 `CONFIG.counter` 设为 `false`，即可关闭计数（也可以同时从两份 README 中去掉徽章）。
+- 或者把 `CONFIG.counterId` **以及** 两份 README 徽章里的 `page_id` 改成你自己的 id（例如 `yourname.weather-clock-dashboard`），从而单独计数。若只想统计在线页打开次数，请保留 README 徽章上的 `query_only=true`。
+
+---
+
 ## 如何改配置
 
 打开 `index.html`，在靠近文件开头的 `CONFIG` 对象里修改即可：
@@ -68,6 +83,8 @@
 | `aqi` | 空气质量标准 | `"us"` 或 `"european"` |
 | `homeAdvice` | 是否显示居家建议 | `true` / `false` |
 | `refreshMinutes` | 天气刷新间隔（分钟） | `15` |
+| `counter` | 是否统计在线页访问 | `true` / `false` |
+| `counterId` | Visitor Badge 的 `page_id`（Fork 后请改成自己的） | `"ywlbest-creator.github.io.weather-clock-dashboard"` |
 
 穿衣建议是一条通用建议，配置里没有家庭成员或人名。
 
@@ -254,3 +271,6 @@ iOS 对网页 Wake Lock 支持有限，请以系统「自动锁定」为准。
 
 **旧手机看起来有点不一样？**  
 这是为了兼容：不支持的 CSS（如 `clamp`、部分动画）会被忽略并回退到固定字号。如布局过紧，可把设备横过来，或用「添加到主屏幕」全屏查看。
+
+**怎么看访问次数？**  
+看本说明顶部的徽章，或打开带 `query_only=true` 的同一图片地址（见[如何查看访问量](#如何查看访问量)）。Fork 后若要停止计数，把 `CONFIG.counter` 设为 `false` 即可。

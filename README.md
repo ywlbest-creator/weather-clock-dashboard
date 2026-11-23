@@ -2,6 +2,8 @@
 
 [中文说明](README.zh-CN.md)
 
+[![visits](https://visitor-badge.laobi.icu/badge?page_id=ywlbest-creator.github.io.weather-clock-dashboard&left_text=visits&query_only=true)](https://ywlbest-creator.github.io/weather-clock-dashboard/)
+
 Turn any old internet-connected device — phone, tablet, computer, or smart-TV browser — into a full-screen weather clock: time, forecast, clothing advice, and optional indoor tips. Open it in a browser; no app to install. A single HTML file with no external libraries.
 
 ![Chinese interface](preview.png)
@@ -52,6 +54,19 @@ All on-page text — date and weekday, weather descriptions, clothing and home a
 
 ---
 
+## Visit count
+
+The badge at the top of this README shows how many times the [live page](https://ywlbest-creator.github.io/weather-clock-dashboard/) has been opened. It uses the same counter as the page itself.
+
+The counter is [Visitor Badge](https://visitor-badge.laobi.icu/) (`visitor-badge.laobi.icu`), a registration-free public service. It only stores a page id and a number, not personal information. The live page records a visit with a hidden request; if that request fails, the dashboard still works as usual. The README badge uses `query_only=true`, so opening this document does not add to the count.
+
+After you fork this project:
+
+- Set `CONFIG.counter` to `false` in `index.html` to turn counting off (you can also remove the badge from the README files).
+- Or change `CONFIG.counterId` **and** the `page_id` in both README badges to your own id (for example `yourname.weather-clock-dashboard`) so you start a separate count. Keep `query_only=true` on the README badge if you only want live-page opens counted.
+
+---
+
 ## Configuration
 
 Open `index.html` and edit the `CONFIG` object near the top of the file:
@@ -68,6 +83,8 @@ Open `index.html` and edit the `CONFIG` object near the top of the file:
 | `aqi` | Air-quality scale | `"us"` or `"european"` |
 | `homeAdvice` | Show the home-advice line | `true` / `false` |
 | `refreshMinutes` | Weather refresh interval, in minutes | `15` |
+| `counter` | Record live-page visits | `true` / `false` |
+| `counterId` | Visitor Badge `page_id` (change this after a fork) | `"ywlbest-creator.github.io.weather-clock-dashboard"` |
 
 Clothing advice is a single generic line. There is no household-member or name list in the config.
 
@@ -254,3 +271,6 @@ The clock uses the time zone of the resolved place. A `?city=` or geolocation re
 
 **It looks a bit different on an old phone.**  
 That is the compatibility fallback: unsupported CSS (such as `clamp` or some animations) is ignored, and fixed type sizes are used. If the layout feels tight, rotate the device to landscape, or use Add to Home Screen for a fuller view.
+
+**How do I see the visit count?**  
+Look at the badge at the top of this README, or open the same image with `query_only=true` (see [Visit count](#visit-count)). To stop counting after a fork, set `CONFIG.counter` to `false`.
