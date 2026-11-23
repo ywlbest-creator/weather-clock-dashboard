@@ -41,6 +41,7 @@
     height: 100%;
     height: 100vh;
     height: 100dvh;
+    height: var(--app-h, 100dvh);
     position: relative;
     background: #04060d;
     color: #dceaff;
@@ -87,6 +88,8 @@
     -webkit-flex: 1 1 auto;
     flex: 1 1 auto;
     min-height: 0;
+    height: 100%;
+    overflow: hidden;
     display: -webkit-box;
     display: -webkit-flex;
     display: flex;
@@ -387,17 +390,31 @@
   #fs-btn:hover, #fs-btn:focus { opacity: 1; outline: none; }
   #fs-btn.hidden { display: none; }
 
-  /* Narrow / portrait: time, weather, clothing stacked */
+  .fit-hide { display: none !important; }
+
+  /* Narrow / portrait: stack time, weather, clothing into one screen, no scroll */
   @media (orientation: portrait), (max-aspect-ratio: 1/1), (max-width: 700px) {
-    body { overflow: auto; height: auto; min-height: 100%; min-height: 100vh; min-height: 100dvh; }
+    html, body {
+      overflow: hidden;
+      height: 100%;
+      height: 100vh;
+      height: 100dvh;
+      height: var(--app-h, 100dvh);
+      min-height: 0;
+    }
+    body {
+      padding: 6px 8px;
+      padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    }
     .main {
       -webkit-flex-wrap: nowrap;
       flex-wrap: nowrap;
       -webkit-flex-direction: column;
       flex-direction: column;
-      height: auto;
-      min-height: calc(100vh - 24px);
-      min-height: calc(100dvh - 24px);
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
     }
     .block-time, .block-wear, .block-weather {
       width: 100%;
@@ -405,30 +422,64 @@
     }
     .block-time {
       -webkit-box-ordinal-group: 2; -webkit-order: 1; order: 1;
-      padding: 8px 8px 12px;
+      padding: 2px 4px 4px;
+      -webkit-flex-shrink: 0;
+      flex-shrink: 0;
     }
     .block-weather {
       -webkit-box-ordinal-group: 3; -webkit-order: 2; order: 2;
       min-height: 0;
+      padding: 8px 10px 6px;
       -webkit-box-flex: 1; -webkit-flex: 1 1 auto; flex: 1 1 auto;
+      overflow: hidden;
     }
     .block-wear {
       -webkit-box-ordinal-group: 4; -webkit-order: 3; order: 3;
-      padding: 16px 16px;
-      margin-top: 10px;
+      padding: 8px 10px;
+      margin-top: 6px;
       -webkit-flex-shrink: 0;
       flex-shrink: 0;
     }
     #clock, #now-temp {
-      font-size: 64px;
-      font-size: 14vw;
-      font-size: clamp(52px, 14vw, 120px);
+      font-size: 44px;
+      font-size: 11vw;
+      font-size: clamp(36px, 11vw, 72px);
     }
     #date-line {
-      font-size: 20px;
-      font-size: clamp(18px, 5.5vw, 36px);
+      margin-top: 6px;
+      font-size: 15px;
+      font-size: clamp(13px, 3.8vw, 20px);
     }
-    .days { min-height: 120px; height: 18vh; }
+    #updated { margin-top: 4px; }
+    .loc { font-size: 13px; font-size: clamp(12px, 3.2vw, 16px); }
+    .loc-sub { font-size: 11px; margin-top: 1px; }
+    #now-desc { font-size: 14px; font-size: clamp(13px, 3.4vw, 16px); }
+    #now-hl, #now-feel { font-size: 12px; font-size: clamp(11px, 3vw, 14px); margin-top: 2px; }
+    .aqi { margin-top: 6px; }
+    .aqi-bar { margin-top: 6px; }
+    .hours { margin-top: 6px; }
+    .hour { padding: 2px 0 0; }
+    .hour .e { height: 22px; margin: 2px 0 1px; }
+    .hour .e svg { width: 18px; height: 18px; }
+    .hour .p { height: 14px; }
+    .days {
+      margin-top: 4px;
+      min-height: 0;
+      height: auto;
+      -webkit-box-flex: 1;
+      -webkit-flex: 1 1 auto;
+      flex: 1 1 auto;
+    }
+    .wear-row {
+      font-size: 22px;
+      font-size: clamp(16px, 5.2vw, 26px);
+      margin-bottom: 6px;
+    }
+    .wear-row.home {
+      font-size: 13px;
+      font-size: clamp(12px, 3.3vw, 16px);
+    }
+    #fs-btn { display: none; }
   }
 </style>
 </head>
@@ -730,12 +781,6 @@ var CONFIG = {
       if (onErr) onErr(e3);
     }
   }
-  function displayCity(name) {
-    if (!name) return "";
-    if (!isEn() && String(name).toLowerCase() === "shanghai") return "上海";
-    if (isEn() && name === "上海") return "Shanghai";
-    return name;
-  }
   function formatCoords(lat, lon) {
     var ns = lat >= 0 ? "N" : "S";
     var ew = lon >= 0 ? "E" : "W";
@@ -763,24 +808,123 @@ var CONFIG = {
     var url = "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(name) + "&count=1&language=" + lang + "&format=json";
     getJSON(url, 10000, function (data) { cb(pickGeoResult(data)); }, function () { cb(null); });
   }
+  function shortPlace(name) {
+    var s = trim(name);
+    if (!s) return "";
+    s = s.replace(/(市|省|特别行政区|自治区|Municipality|Province|Prefecture|City)$/i, "");
+    return trim(s) || trim(name);
+  }
+  function geoCacheKey(lat, lon, lang) {
+    return "wcd-revgeo-v1:" + Number(lat).toFixed(2) + "," + Number(lon).toFixed(2) + ":" + lang;
+  }
+  function readGeoCache(lat, lon, lang) {
+    try {
+      var raw = localStorage.getItem(geoCacheKey(lat, lon, lang));
+      var o;
+      if (!raw) return null;
+      o = JSON.parse(raw);
+      if (!o || !o.name) return null;
+      if (o.at && ((new Date()).getTime() - o.at > 30 * 24 * 60 * 60 * 1000)) return null;
+      return { name: o.name, sub: o.sub || "", tz: o.tz || "" };
+    } catch (e) { return null; }
+  }
+  function writeGeoCache(lat, lon, lang, info) {
+    try {
+      localStorage.setItem(geoCacheKey(lat, lon, lang), JSON.stringify({
+        name: info.name, sub: info.sub || "", tz: info.tz || "", at: (new Date()).getTime()
+      }));
+    } catch (e) {}
+  }
+  function parseNominatim(data) {
+    var a, name, sub, i, opts;
+    if (!data || !data.address) return null;
+    a = data.address;
+    name = a.city || a.town || a.city_district || a.district || a.county || a.village || a.municipality || a.suburb || "";
+    if (!name) return null;
+    opts = [a.town, a.city_district, a.district, a.suburb, a.county, a.village, a.municipality];
+    sub = "";
+    for (i = 0; i < opts.length; i++) {
+      if (opts[i] && !samePlaceName(opts[i], name)) { sub = opts[i]; break; }
+    }
+    return { name: shortPlace(name), sub: sub, tz: "" };
+  }
+  function parseBDC(data) {
+    var name, sub, admins, i, lv, nm, info, tz, block, items;
+    if (!data) return null;
+    name = data.city || data.locality || "";
+    sub = data.locality || "";
+    info = data.localityInfo || {};
+    admins = info.administrative || [];
+    if (!name) {
+      for (i = 0; i < admins.length; i++) {
+        lv = Number(admins[i].adminLevel);
+        nm = admins[i].name || "";
+        if ((lv === 5 || lv === 6 || lv === 4) && nm) { name = nm; break; }
+      }
+    }
+    if (!name) return null;
+    if (samePlaceName(sub, name)) sub = "";
+    if (!sub) {
+      for (i = admins.length - 1; i >= 0; i--) {
+        lv = Number(admins[i].adminLevel);
+        nm = admins[i].name || "";
+        if (lv >= 6 && nm && !samePlaceName(nm, name)) { sub = nm; break; }
+      }
+    }
+    tz = "";
+    items = info.informative || [];
+    for (i = 0; i < items.length; i++) {
+      nm = items[i].name || "";
+      if (nm.indexOf("/") > 0 && nm.indexOf(" ") < 0) { tz = nm; break; }
+    }
+    return { name: shortPlace(name), sub: sub, tz: tz };
+  }
+  function reverseNominatim(lat, lon, lang, cb) {
+    var loc = (lang === "en") ? "en" : "zh-CN";
+    var url = "https://nominatim.openstreetmap.org/reverse?lat=" + encodeURIComponent(lat) +
+      "&lon=" + encodeURIComponent(lon) + "&format=jsonv2&accept-language=" + encodeURIComponent(loc);
+    getJSON(url, 8000, function (data) { cb(parseNominatim(data)); }, function () { cb(null); });
+  }
+  function reverseBDC(url, cb) {
+    getJSON(url, 8000, function (data) { cb(parseBDC(data)); }, function () { cb(null); });
+  }
   function reverseGeocode(lat, lon, cb) {
     var lang = isEn() ? "en" : "zh";
-    var url = "https://geocoding-api.open-meteo.com/v1/reverse?latitude=" + encodeURIComponent(lat) + "&longitude=" + encodeURIComponent(lon) + "&language=" + lang + "&format=json&count=1";
-    getJSON(url, 8000, function (data) { cb(pickGeoResult(data)); }, function () { cb(null); });
+    var locLang = isEn() ? "en" : "zh-Hans";
+    var cached = readGeoCache(lat, lon, lang);
+    var q1, q2;
+    if (cached && cached.name) { cb(cached); return; }
+    function finish(info) {
+      if (info && info.name) writeGeoCache(lat, lon, lang, info);
+      cb(info && info.name ? info : null);
+    }
+    q1 = "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" + encodeURIComponent(lat) +
+      "&longitude=" + encodeURIComponent(lon) + "&localityLanguage=" + encodeURIComponent(locLang);
+    q2 = "https://api-bdc.io/data/reverse-geocode-client?latitude=" + encodeURIComponent(lat) +
+      "&longitude=" + encodeURIComponent(lon) + "&localityLanguage=" + encodeURIComponent(locLang);
+    reverseBDC(q1, function (info) {
+      if (info && info.name) { finish(info); return; }
+      reverseBDC(q2, function (info2) {
+        if (info2 && info2.name) { finish(info2); return; }
+        reverseNominatim(lat, lon, lang, finish);
+      });
+    });
   }
   function applyDefaultPlace() {
-    place.name = displayCity(cfg.city);
+    place.name = cfg.city || "";
     place.sub = cfg.citySub || "";
     place.lat = cfg.lat;
     place.lon = cfg.lon;
     place.tz = cfg.timezone || "UTC";
   }
-  function applyGeoInfo(info) {
+  function applyGeoInfo(info, coordsToo) {
     if (!info) return;
     if (info.name) place.name = info.name;
     if (info.sub != null) place.sub = info.sub;
-    if (info.lat != null) place.lat = info.lat;
-    if (info.lon != null) place.lon = info.lon;
+    if (coordsToo) {
+      if (info.lat != null) place.lat = info.lat;
+      if (info.lon != null) place.lon = info.lon;
+    }
     if (info.tz) place.tz = info.tz;
   }
   function updatePlaceLabels() {
@@ -824,7 +968,7 @@ var CONFIG = {
     if (city) {
       forwardGeocode(city, function (info) {
         if (info) {
-          applyGeoInfo(info);
+          applyGeoInfo(info, true);
           if (!place.name) place.name = city;
         } else applyDefaultPlace();
         finish();
@@ -1266,7 +1410,7 @@ var CONFIG = {
     var hours, html, i, h, label, p, nightHour, pack;
     if (!el) return;
     pack = t();
-    hours = hourlyFrom(currentHourStamp(d), 12);
+    hours = hourlyFrom(currentHourStamp(d), stripHourCount());
     html = "";
     for (i = 0; i < hours.length; i++) {
       h = hours[i];
@@ -1398,6 +1542,11 @@ var CONFIG = {
     renderStrip(d);
     renderWeekRow(d);
     updateStamp();
+    if (window.requestAnimationFrame) {
+      requestAnimationFrame(function () { fitLayout(); });
+    } else {
+      fitLayout();
+    }
   }
   function cacheKey() {
     return "weather-clock-dashboard-v1:" + Number(place.lat).toFixed(2) + "," + Number(place.lon).toFixed(2);
@@ -1503,6 +1652,80 @@ var CONFIG = {
       }
     } catch (e) {}
   }
+  function isPortraitLayout() {
+    var w = window.innerWidth || 0, h = window.innerHeight || 0;
+    if (window.matchMedia) {
+      try {
+        if (window.matchMedia("(orientation: portrait)").matches) return true;
+        if (window.matchMedia("(max-aspect-ratio: 1/1)").matches) return true;
+        if (window.matchMedia("(max-width: 700px)").matches) return true;
+      } catch (e) {}
+    }
+    return (h >= w) || (w > 0 && w <= 700);
+  }
+  function stripHourCount() {
+    var h;
+    if (!isPortraitLayout()) return 12;
+    h = window.innerHeight || 0;
+    return h < 700 ? 6 : 8;
+  }
+  function syncAppHeight() {
+    var h = 0;
+    try {
+      if (window.visualViewport && window.visualViewport.height) h = Math.round(window.visualViewport.height);
+    } catch (e1) {}
+    if (!h) h = window.innerHeight || 0;
+    if (h > 0) {
+      document.documentElement.style.setProperty("--app-h", h + "px");
+      document.documentElement.style.height = h + "px";
+      document.body.style.height = h + "px";
+    }
+  }
+  function layoutOverflow() {
+    var limit = window.innerHeight || document.documentElement.clientHeight || 0;
+    var main = document.querySelector(".main");
+    var sh = Math.max(document.body.scrollHeight || 0, document.documentElement.scrollHeight || 0, main ? (main.scrollHeight || 0) : 0);
+    return limit > 0 && sh > limit + 2;
+  }
+  function fitLayout() {
+    var ids, i, el;
+    syncAppHeight();
+    ids = ["loc-sub", "updated", "now-feel", "aqi-card", "hour-strip", "daily-row", "now-hl", "home-row"];
+    for (i = 0; i < ids.length; i++) {
+      el = document.getElementById(ids[i]);
+      if (el && el.className && el.className.indexOf("fit-hide") >= 0) {
+        el.className = el.className.replace(/\s?fit-hide/g, "");
+      }
+    }
+    if (!isPortraitLayout()) return;
+    for (i = 0; i < ids.length; i++) {
+      if (!layoutOverflow()) break;
+      el = document.getElementById(ids[i]);
+      if (!el) continue;
+      if ((" " + el.className + " ").indexOf(" fit-hide ") >= 0) continue;
+      el.className = trim(el.className + " fit-hide");
+    }
+  }
+  var fitTimer = null;
+  function onViewportChange() {
+    if (fitTimer) clearTimeout(fitTimer);
+    fitTimer = setTimeout(function () {
+      fitTimer = null;
+      syncAppHeight();
+      if (weather) renderAll();
+      else fitLayout();
+    }, 80);
+  }
+  function setupViewport() {
+    syncAppHeight();
+    if (!window.addEventListener) return;
+    window.addEventListener("resize", onViewportChange, false);
+    window.addEventListener("orientationchange", onViewportChange, false);
+    if (window.visualViewport && window.visualViewport.addEventListener) {
+      window.visualViewport.addEventListener("resize", onViewportChange, false);
+    }
+  }
+
   function setupCounter() {
     var id, img, src;
     try {
@@ -1559,10 +1782,12 @@ var CONFIG = {
     applyDefaultPlace();
     applyChrome();
     updatePlaceLabels();
+    setupViewport();
     tick();
     setInterval(tick, 1000);
     setupKeepAwake();
     setupCounter();
+    fitLayout();
     resolveLocation(function () {
       fakeBase = parseDemoNow();
       pageStart = (new Date()).getTime();
