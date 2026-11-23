@@ -310,9 +310,11 @@
   .days {
     margin-top: 8px;
     -webkit-box-flex: 1;
-    -webkit-flex: 1 1 auto;
-    flex: 1 1 auto;
+    -webkit-flex: 1 1 0%;
+    flex: 1 1 0%;
     min-height: 0;
+    width: 100%;
+    position: relative;
     overflow: hidden;
     --hi: #8cbcff;
     --lo: #c9a6ff;
@@ -321,6 +323,8 @@
     --wk-icon: #9ec4ff;
   }
   .week-chart {
+    position: absolute;
+    left: 0; top: 0;
     width: 100%; height: 100%;
     display: block;
     font-family: inherit;
@@ -332,10 +336,10 @@
   .week-chart .c-lo-line { stroke: #c9a6ff; stroke: var(--lo, #c9a6ff); }
   .week-chart .c-hi-dot { fill: #8cbcff; fill: var(--hi, #8cbcff); }
   .week-chart .c-lo-dot { fill: #c9a6ff; fill: var(--lo, #c9a6ff); }
-  .week-chart .c-hi, .week-chart .c-lo { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .week-chart .c-hi, .week-chart .c-lo { font-weight: 600; font-variant-numeric: tabular-nums; }
   .week-chart .c-hi { fill: #8cbcff; fill: var(--hi, #8cbcff); }
   .week-chart .c-lo { fill: #c9a6ff; fill: var(--lo, #c9a6ff); }
-  .week-chart .c-wk { fill: rgba(160,190,230,0.8); fill: var(--wk, rgba(160,190,230,0.8)); font-size: 14px; font-weight: 500; }
+  .week-chart .c-wk { fill: rgba(160,190,230,0.8); fill: var(--wk, rgba(160,190,230,0.8)); font-weight: 500; }
   .week-chart .c-icon { color: #9ec4ff; color: var(--wk-icon, #9ec4ff); }
   .week-chart .c-band-top { stop-color: #8cbcff; stop-color: var(--hi, #8cbcff); stop-opacity: 0.28; }
   .week-chart .c-band-bot { stop-color: #c9a6ff; stop-color: var(--lo, #c9a6ff); stop-opacity: 0.06; }
@@ -435,8 +439,8 @@
     }
     .block-wear {
       -webkit-box-ordinal-group: 4; -webkit-order: 3; order: 3;
-      padding: 8px 10px;
-      margin-top: 6px;
+      padding: 6px 10px;
+      margin-top: 4px;
       -webkit-flex-shrink: 0;
       flex-shrink: 0;
     }
@@ -462,13 +466,24 @@
     .hour .e { height: 22px; margin: 2px 0 1px; }
     .hour .e svg { width: 18px; height: 18px; }
     .hour .p { height: 14px; }
+    .block-weather {
+      -webkit-flex: 1 1 0%;
+      flex: 1 1 0%;
+    }
     .days {
       margin-top: 4px;
-      min-height: 0;
-      height: auto;
+      min-height: 140px;
+      width: 100%;
       -webkit-box-flex: 1;
-      -webkit-flex: 1 1 auto;
-      flex: 1 1 auto;
+      -webkit-flex: 1 1 0%;
+      flex: 1 1 0%;
+      position: relative;
+    }
+    .week-chart {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+      height: 100%;
     }
     .wear-row {
       font-size: 22px;
@@ -1456,6 +1471,7 @@ var CONFIG = {
     var el = document.getElementById("daily-row");
     var todayIso, n, days, i, W, H, padL, padR, padT, padB, mins, maxs, tMin, tMax, mid;
     var xAt, yT, hiPts, loPts, hi, lo, closed, marks, day, x, y1, y2, pack, rev;
+    var fontHi, fontWk, iconS, iconY, wkY;
     if (!el || !weather) { if (el) el.innerHTML = ""; return; }
     pack = t();
     todayIso = ymd(d);
@@ -1472,8 +1488,19 @@ var CONFIG = {
       mins.push(weather.daily.temperature_2m_min[i]);
       maxs.push(weather.daily.temperature_2m_max[i]);
     }
-    W = 660; H = 320;
-    padL = 30; padR = 30; padT = 30; padB = 56;
+    W = el.clientWidth || el.offsetWidth || 0;
+    H = el.clientHeight || el.offsetHeight || 0;
+    if (W < 40) W = isPortraitLayout() ? 320 : 660;
+    if (H < 40) H = isPortraitLayout() ? 140 : 320;
+    W = Math.max(240, Math.round(W));
+    H = Math.max(isPortraitLayout() ? 140 : 110, Math.round(H));
+    fontHi = isPortraitLayout() ? 12 : 16;
+    fontWk = isPortraitLayout() ? 11 : 14;
+    iconS = isPortraitLayout() ? 16 : 18;
+    padL = isPortraitLayout() ? 14 : 30;
+    padR = isPortraitLayout() ? 14 : 30;
+    padT = Math.max(fontHi + 8, isPortraitLayout() ? 22 : 30);
+    padB = Math.max(fontWk + iconS + 12, isPortraitLayout() ? 40 : 56);
     tMin = Math.floor(Math.min.apply(null, mins) - 1);
     tMax = Math.ceil(Math.max.apply(null, maxs) + 1);
     if (tMax - tMin < 10) {
@@ -1497,19 +1524,21 @@ var CONFIG = {
     rev = loPts.slice().reverse();
     closed = hi + " " + smoothPath(rev, 0.2).replace(/^M /, "L ") + " Z";
     marks = "";
+    iconY = H - fontWk - 6 - iconS / 2;
+    wkY = H - 4;
     for (i = 0; i < days.length; i++) {
       day = days[i];
       x = xAt(i);
       y1 = yT(day.max);
       y2 = yT(day.min);
-      marks += '<text class="c-hi" x="' + x.toFixed(1) + '" y="' + (y1 - 12).toFixed(1) + '" text-anchor="middle">' + tempStr(day.max) + "°</text>";
-      marks += '<text class="c-lo" x="' + x.toFixed(1) + '" y="' + (y2 + 18).toFixed(1) + '" text-anchor="middle">' + tempStr(day.min) + "°</text>";
-      marks += '<circle class="c-hi-dot" cx="' + x.toFixed(1) + '" cy="' + y1.toFixed(1) + '" r="4"></circle>';
-      marks += '<circle class="c-lo-dot" cx="' + x.toFixed(1) + '" cy="' + y2.toFixed(1) + '" r="4"></circle>';
-      marks += iconGroup(iconName(day.code, false), x, H - 32, 18);
-      marks += '<text class="c-wk" x="' + x.toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + day.label + "</text>";
+      marks += '<text class="c-hi" x="' + x.toFixed(1) + '" y="' + (y1 - 4).toFixed(1) + '" text-anchor="middle" font-size="' + fontHi + '">' + tempStr(day.max) + "°</text>";
+      marks += '<text class="c-lo" x="' + x.toFixed(1) + '" y="' + (y2 + (fontHi + 4)).toFixed(1) + '" text-anchor="middle" font-size="' + fontHi + '">' + tempStr(day.min) + "°</text>";
+      marks += '<circle class="c-hi-dot" cx="' + x.toFixed(1) + '" cy="' + y1.toFixed(1) + '" r="' + (isPortraitLayout() ? 3 : 4) + '"></circle>';
+      marks += '<circle class="c-lo-dot" cx="' + x.toFixed(1) + '" cy="' + y2.toFixed(1) + '" r="' + (isPortraitLayout() ? 3 : 4) + '"></circle>';
+      marks += iconGroup(iconName(day.code, false), x, iconY, iconS);
+      marks += '<text class="c-wk" x="' + x.toFixed(1) + '" y="' + wkY + '" text-anchor="middle" font-size="' + fontWk + '">' + day.label + "</text>";
     }
-    el.innerHTML = '<svg class="week-chart" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + pack.weekChart + '">' +
+    el.innerHTML = '<svg class="week-chart" width="100%" height="100%" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + pack.weekChart + '">' +
       '<defs><linearGradient id="wkBand" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0%" class="c-band-top"></stop><stop offset="100%" class="c-band-bot"></stop></linearGradient></defs>' +
       '<path class="c-band" d="' + closed + '" fill="url(#wkBand)"></path>' +
@@ -1542,10 +1571,16 @@ var CONFIG = {
     renderStrip(d);
     renderWeekRow(d);
     updateStamp();
-    if (window.requestAnimationFrame) {
-      requestAnimationFrame(function () { fitLayout(); });
-    } else {
+    function afterFitRedraw() {
       fitLayout();
+      if (weather) renderWeekRow(nowDate());
+    }
+    if (window.requestAnimationFrame) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(afterFitRedraw);
+      });
+    } else {
+      afterFitRedraw();
     }
   }
   function cacheKey() {
@@ -1690,7 +1725,7 @@ var CONFIG = {
   function fitLayout() {
     var ids, i, el;
     syncAppHeight();
-    ids = ["loc-sub", "updated", "now-feel", "aqi-card", "hour-strip", "daily-row", "now-hl", "home-row"];
+    ids = ["loc-sub", "updated", "now-feel", "now-hl", "aqi-card", "hour-strip", "home-row", "daily-row"];
     for (i = 0; i < ids.length; i++) {
       el = document.getElementById(ids[i]);
       if (el && el.className && el.className.indexOf("fit-hide") >= 0) {
